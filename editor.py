@@ -20,9 +20,6 @@ def rotate(input, n):
 def edit_buffer(buffer, key, cursor, window) -> list:
     try:
         new_buffer = buffer.copy()
-
-        # TODO: Makes this to delete and move text to back line
-
         if cursor.col == 1 and cursor.row == 1 and key == 8:
             return new_buffer
 
