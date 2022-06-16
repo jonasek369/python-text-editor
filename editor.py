@@ -9,6 +9,7 @@ accept_keycodes = [ord(key) for key in list(string.ascii_letters + string.digits
 
 KEY_ESC = 27
 KEY_ENTER = 10
+KEY_TAB = 9
 KEY_BACKSPACE = 8
 
 # This makes you able to change the keycodes and rebind ESC, ENTER, BACKSPACE
@@ -66,6 +67,15 @@ def edit_buffer(buffer, key, cursor, window) -> (list, bool):
             new_buffer[cursor.row] = line[cursor.col - 1:] + new_line
             cursor.down()
             cursor.col = 1
+            edited = True
+
+        if key == KEY_TAB:
+            line = new_buffer[cursor.row - 1]
+            new_buffer[cursor.row - 1] = line[:cursor.col - 1] + "      " + line[cursor.col - 1:]
+            cursor.right()
+            cursor.right()
+            cursor.right()
+            cursor.right()
             edited = True
 
         elif key in accept_keycodes:

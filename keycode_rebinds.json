@@ -1,5 +1,6 @@
 {
     "KEY_ESC": 27,
     "KEY_ENTER": 10,
+    "KEY_TAB": 9,
     "KEY_BACKSPACE": 8
 }
