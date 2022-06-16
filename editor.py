@@ -270,6 +270,11 @@ class Editor:
                     sys.exit(0)
 
 
+def curses_keycode_test(stdscr):
+    key = stdscr.getch()
+    print(key)
+
+
 if __name__ == '__main__':
     editor = Editor()
     wrapper(editor.main)
