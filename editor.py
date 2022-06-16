@@ -11,7 +11,6 @@ KEY_ESC = 27
 KEY_ENTER = 10
 KEY_BACKSPACE = 8
 
-
 # This makes you able to change the keycodes and rebind ESC, ENTER, BACKSPACE
 if os.path.exists("keycode_rebinds.json"):
     with open("keycode_rebinds.json", "r") as file:
@@ -19,8 +18,6 @@ if os.path.exists("keycode_rebinds.json"):
 
     for key, val in keycode_rebinds.items():
         globals()[key] = val
-
-
 
 
 # floor to positive
@@ -265,6 +262,6 @@ class Editor:
                     sys.exit(0)
 
 
-#if __name__ == '__main__':
-#    editor = Editor()
-#    wrapper(editor.main)
+if __name__ == '__main__':
+    editor = Editor()
+    wrapper(editor.main)
