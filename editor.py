@@ -1,4 +1,5 @@
 import curses
+import os
 import string
 import sys
 from curses import *
@@ -13,15 +14,12 @@ def ftp(num):
     return num
 
 
-def rotate(input, n):
-    return input[n:] + input[:n]
-
-
-def edit_buffer(buffer, key, cursor, window) -> list:
+def edit_buffer(buffer, key, cursor, window) -> (list, bool):
     try:
+        edited = False
         new_buffer = buffer.copy()
         if cursor.col == 1 and cursor.row == 1 and key == 8:
-            return new_buffer
+            return new_buffer, False
 
         if key == 8 and cursor.col == 1:
             line = new_buffer[cursor.row - 1]
@@ -29,19 +27,22 @@ def edit_buffer(buffer, key, cursor, window) -> list:
             new_buffer[cursor.row - 2] = line_move_to + line
 
             # shift all elements in buffer by one
-            for i in range(cursor.row - 1, len(new_buffer)-1):
-                new_buffer[i] = new_buffer[i+1]
+            for i in range(cursor.row - 1, len(new_buffer) - 1):
+                new_buffer[i] = new_buffer[i + 1]
 
             cursor.up()
-            len_of_buffer = len(new_buffer[cursor.row - 1])-1
-            cursor.col = len_of_buffer if len_of_buffer < window.n_cols-1 else window.n_cols
+            len_of_buffer = len(new_buffer[cursor.row - 1])+1
+            cursor.col = len_of_buffer if len_of_buffer < window.n_cols - 1 else window.n_cols
 
-            return new_buffer
+            edited = True
+
+            return new_buffer, edited
 
         if key == 8:
             line = new_buffer[cursor.row - 1]
             new_buffer[cursor.row - 1] = line[:ftp(cursor.col - 2)] + line[cursor.col - 1:]
             cursor.left()
+            edited = True
 
         if key == 10:
             line = new_buffer[cursor.row - 1]
@@ -50,16 +51,18 @@ def edit_buffer(buffer, key, cursor, window) -> list:
             new_buffer[cursor.row] = line[cursor.col - 1:] + new_line
             cursor.down()
             cursor.col = 1
+            edited = True
 
         elif key in accept_keycodes:
             line = new_buffer[cursor.row - 1]
             new_buffer[cursor.row - 1] = line[:cursor.col - 1] + chr(key) + line[cursor.col - 1:]
             cursor.right()
+            edited = True
 
-        return new_buffer
+        return new_buffer, edited
     except IndexError as e:
         print(e)
-        return buffer
+        return buffer, False
 
 
 class Window:
@@ -123,29 +126,49 @@ class Editor:
                 rows, cols = self.stdscr.getmaxyx()
                 cmd_promp = "".join(buffer) + " " * (cols - len(buffer) - 1)
                 self.stdscr.addstr(rows - 1, 0, cmd_promp, curses.A_REVERSE)
+                self.stdscr.addstr(rows - 1, len(buffer), "")
 
     def text_editor(self, file_name):
         self.stdscr.nodelay(True)
-
-        with open(file_name, "r") as file:
-            buffer = file.readlines()
+        if os.path.exists(file_name):
+            with open(file_name, "r") as file:
+                buffer = file.readlines()
+        else:
+            buffer = []
 
         window = Window(0, 0)
         cursor = Cursor(window)
+
+        is_saved = False
+
         while True:
             try:
                 key = self.stdscr.getch()
             except:
                 key = 0
+
+            if not file_name:
+                file_name = "untitled.txt"
+
             if key == 27:
                 cmd_buffer = self.open_cmd_overlay()
                 if cmd_buffer is not None:
-                    if "".join(cmd_buffer)[:2] == ":b":
+                    if "".join(cmd_buffer).lower()[:2] == ":b":
                         return
-                    if "".join(cmd_buffer)[:2] == ":q":
+
+                    if "".join(cmd_buffer).lower()[:2] == ":q":
                         sys.exit(0)
-                    if "".join(cmd_buffer)[:2] == ":w":
+
+                    if "".join(cmd_buffer).lower()[:2] == ":w":
                         with open(file_name, "w") as file:
+                            file.write("\n".join(buffer))
+                        is_saved = True
+
+                    if "".join(cmd_buffer).lower()[:4] == ":chn":
+                        file_name = "".join(cmd_buffer).lower()[5:]
+
+                    if "".join(cmd_buffer).lower()[:4] == ":sav":
+                        with open("".join(cmd_buffer).lower()[5:], "w") as file:
                             file.write("\n".join(buffer))
 
             rows, cols = self.stdscr.getmaxyx()
@@ -158,16 +181,25 @@ class Editor:
 
             cursor.update(key)
 
-            buffer = edit_buffer(buffer, key, cursor, window)
+            buffer, was_edited = edit_buffer(buffer, key, cursor, window)
+
+            if was_edited:
+                is_saved = False
 
             self.stdscr.clear()
-            cmd_promp = file_name + " " * (cols - len(file_name) - 1)
+
+            if is_saved:
+                cmd_promp = file_name + " " * (cols - len(file_name) - 1)
+            else:
+                cmd_promp = (file_name + "*") + " " * (cols - len(file_name) - 2)
+
             self.stdscr.addstr(0, 0, cmd_promp, curses.A_REVERSE)
 
             for row, line in enumerate(buffer[:window.n_rows]):
                 self.stdscr.addstr(row + 1, 0, line[:window.n_cols])
 
-            self.stdscr.addstr(window.n_rows, window.n_cols-len(f"{cursor.row}:{cursor.col}"), f"{cursor.row}:{cursor.col}")
+            self.stdscr.addstr(window.n_rows, window.n_cols - len(f"{cursor.row}:{cursor.col}"),
+                               f"{cursor.row}:{cursor.col}")
 
             self.stdscr.addstr(cursor.row, cursor.col - 1, f"")
             self.stdscr.refresh()
