@@ -162,10 +162,7 @@ class Editor:
         is_saved = False
 
         while True:
-            try:
-                key = self.stdscr.getch()
-            except:
-                key = 0
+            key = self.stdscr.getch()
 
             if not file_name:
                 file_name = "untitled.txt"
