@@ -234,12 +234,13 @@ class Editor:
 
             # just for user to know what to do
             self.stdscr.addstr(0, 0, "Welcome to Jim press ESC to open cmd line")
-            self.stdscr.addstr(1, 0, "  :e <name> to open file")
-            self.stdscr.addstr(2, 0, "  :w to save file")
-            self.stdscr.addstr(3, 0, "  :chn <name> to change file name")
-            self.stdscr.addstr(4, 0, "  :sav <name> change file as different name")
-            self.stdscr.addstr(5, 0, "  :b to go back")
-            self.stdscr.addstr(6, 0, "  :q to quit")
+            self.stdscr.addstr(1, 2, "Commands:")
+            self.stdscr.addstr(2, 4, ":e <name> to open file")
+            self.stdscr.addstr(3, 4, ":w to save file")
+            self.stdscr.addstr(4, 4, ":chn <name> to change file name")
+            self.stdscr.addstr(5, 4, ":sav <name> change file as different name")
+            self.stdscr.addstr(6, 4, ":b to go back")
+            self.stdscr.addstr(7, 4, ":q to quit")
 
             if key == KEY_ESC:
                 cmd_buffer = self.open_cmd_overlay()
