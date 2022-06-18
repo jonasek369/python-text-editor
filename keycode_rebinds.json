@@ -2,5 +2,7 @@
     "KEY_ESC": 27,
     "KEY_ENTER": 10,
     "KEY_TAB": 9,
+    "CTRL_C": 3,
+    "CTRL_V": 22,
     "KEY_BACKSPACE": 8
 }

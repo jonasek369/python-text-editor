@@ -1,3 +1,4 @@
+import ctypes
 import curses
 import json
 import os
@@ -10,7 +11,35 @@ accept_keycodes = [ord(key) for key in list(string.ascii_letters + string.digits
 KEY_ESC = 27
 KEY_ENTER = 10
 KEY_TAB = 9
+CTRL_C = 3
+CTRL_V = 22
 KEY_BACKSPACE = 8
+
+
+# https://stackoverflow.com/a/23285159
+CF_TEXT = 1
+
+kernel32 = ctypes.windll.kernel32
+kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+kernel32.GlobalLock.restype = ctypes.c_void_p
+kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
+user32 = ctypes.windll.user32
+user32.GetClipboardData.restype = ctypes.c_void_p
+
+
+def get_clipboard_text():
+    user32.OpenClipboard(0)
+    try:
+        if user32.IsClipboardFormatAvailable(CF_TEXT):
+            data = user32.GetClipboardData(CF_TEXT)
+            data_locked = kernel32.GlobalLock(data)
+            text = ctypes.c_char_p(data_locked)
+            value = text.value
+            kernel32.GlobalUnlock(data_locked)
+            return value
+    finally:
+        user32.CloseClipboard()
+
 
 # This makes you able to change the keycodes and rebind ESC, ENTER, BACKSPACE
 if os.path.exists("keycode_rebinds.json"):
@@ -34,6 +63,15 @@ def edit_buffer(buffer, key, cursor, window) -> (list, bool):
         new_buffer = buffer.copy()
         if cursor.col == 1 and cursor.row == 1 and key == 8:
             return new_buffer, False
+
+        if key == CTRL_V:
+            clipboard = get_clipboard_text().decode()
+
+            line = new_buffer[cursor.row - 1]
+            new_buffer[cursor.row - 1] = line[:cursor.col - 1] + clipboard + line[cursor.col - 1:]
+            for i in range(len(clipboard)):
+                cursor.right()
+
 
         if key == KEY_BACKSPACE and cursor.col == 1:
             line = new_buffer[cursor.row - 1]
@@ -71,7 +109,7 @@ def edit_buffer(buffer, key, cursor, window) -> (list, bool):
 
         if key == KEY_TAB:
             line = new_buffer[cursor.row - 1]
-            new_buffer[cursor.row - 1] = line[:cursor.col - 1] + "      " + line[cursor.col - 1:]
+            new_buffer[cursor.row - 1] = line[:cursor.col - 1] + "    " + line[cursor.col - 1:]
             cursor.right()
             cursor.right()
             cursor.right()
@@ -278,3 +316,5 @@ def curses_keycode_test(stdscr):
 if __name__ == '__main__':
     editor = Editor()
     wrapper(editor.main)
+    # for testing keycodes
+    #wrapper(curses_keycode_test)
